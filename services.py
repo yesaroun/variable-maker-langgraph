@@ -111,22 +111,3 @@ class MessageFormatter:
     def format_text_result(original_text: str, processed_result: str) -> str:
         """텍스트 결과 메시지 포맷팅"""
         return f"텍스트 분석 결과:\n{processed_result}"
-
-    @staticmethod
-    def get_help_message() -> str:
-        """도움말 메시지 반환"""
-        return (
-            "Variable Maker 사용법:\n\n"
-            "단어 입력 (약어 생성):\n"
-            "- 예시: 중취감, international, 데이터베이스\n"
-            "- 결과: 한국어는 영어 번역 후 약어 생성\n"
-            "- 케이스 스타일: camelCase, snake_case, PascalCase, kebab-case, CONSTANT_CASE\n\n"
-            "문장/텍스트 입력 (변수명 추출):\n"
-            "- 예시: 중소기업 취업자 감면을 변수로 만들어주세요\n"
-            "- 팁: 핵심 비즈니스 용어에 집중합니다\n"
-            "- 팁: '변수', '만들어주세요' 같은 요청 문구는 무시됩니다\n\n"
-            "명령어:\n"
-            "- :quit: 프로그램 종료\n"
-            "- :help: 이 메시지 출력\n"
-            "- :case: 케이스 스타일 변경"
-        )

@@ -1,10 +1,5 @@
 from langchain_core.messages import HumanMessage, AIMessage
-from models import (
-    State,
-    is_korean,
-    CaseStyle,
-    prompt_case_style_selection,
-)
+from models import State, is_korean, CaseStyle
 from tools import classify_input_type, smart_case_convert
 from services import (
     TranslationService,
@@ -12,36 +7,6 @@ from services import (
     TextProcessingService,
     MessageFormatter,
 )
-
-
-def command_node(state: State) -> State:
-    """명령어 처리 노드"""
-    last_message = state["messages"][-1]
-    content = last_message.content.strip().lower()
-
-    if content in [":quit"]:
-        state["messages"].append(AIMessage(content="프로그램을 종료합니다."))
-        return state
-
-    if content in [":help"]:
-        help_msg = MessageFormatter.get_help_message()
-        state["messages"].append(AIMessage(content=help_msg))
-        return state
-
-    if content in [":case"]:
-        selected_style = prompt_case_style_selection()
-        state["selected_case_style"] = selected_style
-        state["messages"].append(
-            AIMessage(
-                content=f"케이스 스타일이 {selected_style.value}로 변경되었습니다."
-            )
-        )
-        return state
-
-    state["messages"].append(
-        AIMessage(content="알 수 없는 명령어입니다. :help로 도움말을 확인하세요.")
-    )
-    return state
 
 
 def word_node(state: State) -> State:
@@ -87,10 +52,10 @@ def text_node(state: State) -> State:
 
     # camelCase로 받고 케이스 스타일 적용
     camel_result = TextProcessingService.process_text(original_input)
-    
+
     lines = camel_result.split("\n")
     converted_lines = []
-    
+
     for line in lines:
         if ":" in line:
             concept, variants = line.split(":", 1)
@@ -104,7 +69,7 @@ def text_node(state: State) -> State:
             )
         else:
             converted_lines.append(line)
-    
+
     processed_result = "\n".join(converted_lines)
     state["processed_text"] = processed_result
 
@@ -124,6 +89,7 @@ def chatbot_node(state: State) -> State:
     state["current_input"] = original_input
     input_type_result = classify_input_type.invoke({"text": original_input})
     from models import InputType
+
     state["input_type"] = InputType(input_type_result)
 
     return state
