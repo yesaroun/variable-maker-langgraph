@@ -1,7 +1,7 @@
 [project]
 name = "variable-maker-langgraph"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "AI-powered variable name generator using LangGraph and Streamlit"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,7 +10,6 @@ dependencies = [
     "langgraph>=0.6.0",
     "python-dotenv>=1.1.1",
     "streamlit>=1.48.1",
-    "textual>=5.0.1",
 ]
 
 [dependency-groups]
