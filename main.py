@@ -12,9 +12,7 @@ if "app" not in st.session_state:
     st.session_state.thread_id = "st_session_1"
     st.session_state.case_style = CaseStyle.CAMEL_CASE
     st.session_state.history = []  # [(role, content)]
-    # 도움말 추가 제거 - 마크다운으로 고정 표시
 
-# 사이드바: 채팅 기록
 with st.sidebar:
     st.markdown("### 채팅 기록")
     if st.session_state.history:
@@ -29,7 +27,6 @@ with st.sidebar:
 
 st.title("Variable Maker")
 
-# 도움말을 마크다운으로 직접 표시
 st.markdown(
     """
 ### 💡 Variable Maker 사용법

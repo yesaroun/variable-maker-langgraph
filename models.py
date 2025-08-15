@@ -7,7 +7,6 @@ from enum import Enum
 class InputType(Enum):
     WORD = "word"
     TEXT = "text"
-    COMMAND = "command"
 
 
 class CaseStyle(Enum):
@@ -35,8 +34,6 @@ def is_korean(text: str) -> bool:
         if "가" <= char <= "힣":
             return True
     return False
-
-
 
 
 def get_case_style_options() -> List[tuple]:

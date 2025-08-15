@@ -3,7 +3,7 @@ from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from models import State
-from nodes import chatbot_node, command_node, word_node, text_node
+from nodes import chatbot_node, word_node, text_node
 
 
 def create_graph():
@@ -11,7 +11,6 @@ def create_graph():
     graph = StateGraph(State)
 
     graph.add_node("chatbot", chatbot_node)
-    graph.add_node("command", command_node)
     graph.add_node("word", word_node)
     graph.add_node("text", text_node)
 
@@ -21,10 +20,9 @@ def create_graph():
     graph.add_conditional_edges(
         "chatbot",
         lambda state: state["input_type"].value,
-        {"command": "command", "word": "word", "text": "text"},
+        {"word": "word", "text": "text"},
     )
 
-    graph.add_edge("command", END)
     graph.add_edge("word", END)
     graph.add_edge("text", END)
 
