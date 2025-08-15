@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from graph import create_graph
@@ -6,24 +7,55 @@ from models import CaseStyle, get_case_style_options
 st.set_page_config(page_title="Variable Maker", layout="wide")
 
 
+def get_chat_title(first_message, max_length=30):
+    """첫 번째 메시지에서 채팅 제목을 생성합니다."""
+    if len(first_message) <= max_length:
+        return first_message
+    return first_message[:max_length] + "..."
+
+
 # 초기화
 if "app" not in st.session_state:
     st.session_state.app = create_graph()
-    st.session_state.thread_id = "st_session_1"
+    st.session_state.chat_sessions = (
+        {}
+    )  # {session_id: {"title": str, "messages": [(role, content)], "thread_id": str}} -> TODO: 이거 dataclass로 분리하기
+    st.session_state.current_session_id = None
     st.session_state.case_style = CaseStyle.CAMEL_CASE
-    st.session_state.history = []  # [(role, content)]
 
 with st.sidebar:
-    st.markdown("### 채팅 기록")
-    if st.session_state.history:
-        for i, (role, content) in enumerate(st.session_state.history):
-            role_icon = "🧑" if role == "user" else "🤖"
-            st.markdown(f"**{role_icon} {role.title()}:**")
-            st.markdown(f"_{content}_")
-            if i < len(st.session_state.history) - 1:
-                st.divider()
+    st.markdown("### 채팅 목록")
+
+    if st.button("새로운 채팅 시작하기", use_container_width=True):
+        new_session_id = f"session_{int(time.time())}"  # TODO: 시간만이 아니라 uuid사용하거나 아니면 현재 streamlit 실행된 고유 아이디 없나? 그거 적용하기
+        st.session_state.current_session_id = new_session_id
+        st.session_state.chat_sessions[new_session_id] = {
+            "title": "새로운 채팅",
+            "messages": [],
+            "thread_id": f"thread_{new_session_id}",
+        }
+        st.rerun()
+
+    st.divider()
+
+    if (
+        st.session_state.chat_sessions
+    ):  # TODO: session_state에 대한 구조를 정의할수는 없는 것인가?
+        for session_id, session_data in st.session_state.chat_sessions.items():
+            # 현재 활성 세션 표시
+            if_current = session_id == st.session_state.current_session_id
+            button_style = "➡ " if if_current else ""
+
+            if st.button(
+                f"{button_style}{session_data['title']}",
+                key=f"chat_{session_id}",
+                use_container_width=True,
+            ):
+                st.session_state.current_session_id = session_id
+                st.rerun()
+
     else:
-        st.markdown("_아직 대화가 없습니다._")
+        st.markdown("_아직 채팅이 없습니다._")
 
 st.title("Variable Maker")
 
@@ -45,19 +77,24 @@ st.markdown(
 """
 )
 
-# 채팅 컨테이너 - 사용자 대화만 표시
+# 채팅 컨테이너 - 현재 세션의 대화만 표시
 chat_container = st.container()
 with chat_container:
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
-    # 기존 대화 렌더링 (도움말 제외)
-    for role, content in st.session_state.history:
-        with st.chat_message(role):
-            st.write(content)
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    if (
+        st.session_state.current_session_id
+        and st.session_state.current_session_id in st.session_state.chat_sessions
+    ):
+        current_messages = st.session_state.chat_sessions[
+            st.session_state.current_session_id
+        ]["messages"]
+        for role, content in current_messages:
+            with st.chat_message(role):
+                st.write(content)
 
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 
-# 케이스 스타일 선택과 입력을 나란히 배치
 col1, col2 = st.columns([2, 6])
 
 with col1:
@@ -82,8 +119,23 @@ with col2:
 st.markdown("</div>", unsafe_allow_html=True)
 
 if user_input:
-    # 사용자 메시지를 히스토리에만 추가
-    st.session_state.history.append(("user", user_input))
+    if not st.session_state.current_session_id:
+        new_session_id = f"session_{int(time.time())}"
+        st.session_state.current_session_id = new_session_id
+        st.session_state.chat_sessions[new_session_id] = {
+            "title": get_chat_title(user_input),
+            "messages": [],
+            "thread_id": f"thread_{new_session_id}",
+        }
+
+    current_session = st.session_state.chat_sessions[
+        st.session_state.current_session_id
+    ]
+
+    if not current_session["messages"]:
+        current_session["title"] = get_chat_title(user_input)
+
+    current_session["messages"].append(("user", user_input))
 
     initial_state = {
         "messages": [HumanMessage(content=user_input)],
@@ -95,7 +147,7 @@ if user_input:
         "processed_text": "",
         "selected_case_style": st.session_state.case_style,
     }
-    config = {"configurable": {"thread_id": st.session_state.thread_id}}
+    config = {"configurable": {"thread_id": current_session["thread_id"]}}
 
     try:
         result = st.session_state.app.invoke(initial_state, config)
@@ -104,15 +156,14 @@ if user_input:
         if "selected_case_style" in result and result["selected_case_style"]:
             st.session_state.case_style = result["selected_case_style"]
 
-        # 가장 최근 AI 응답을 히스토리에만 추가
         ai_msg = next(
             (m for m in reversed(result["messages"]) if isinstance(m, AIMessage)),
             None,
         )
         if ai_msg:
-            st.session_state.history.append(("assistant", ai_msg.content))
+            current_session["messages"].append(("assistant", ai_msg.content))
 
     except Exception as e:
-        st.session_state.history.append(("assistant", f"오류가 발생했습니다: {e}"))
+        current_session["messages"].append(("assistant", f"오류가 발생했습니다: {e}"))
 
     st.rerun()
