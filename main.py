@@ -2,7 +2,7 @@ import time
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from graph import create_graph
-from models import CaseStyle, get_case_style_options
+from models import CaseStyle, get_case_style_options, ChatSession
 
 st.set_page_config(page_title="Variable Maker", layout="wide")
 
@@ -17,9 +17,7 @@ def get_chat_title(first_message, max_length=30):
 # 초기화
 if "app" not in st.session_state:
     st.session_state.app = create_graph()
-    st.session_state.chat_sessions = (
-        {}
-    )  # {session_id: {"title": str, "messages": [(role, content)], "thread_id": str}} -> TODO: 이거 dataclass로 분리하기
+    st.session_state.chat_sessions: ChatSession = {}  # {session_id: ChatSession}
     st.session_state.current_session_id = None
     st.session_state.case_style = CaseStyle.CAMEL_CASE
 
@@ -29,25 +27,23 @@ with st.sidebar:
     if st.button("새로운 채팅 시작하기", use_container_width=True):
         new_session_id = f"session_{int(time.time())}"  # TODO: 시간만이 아니라 uuid사용하거나 아니면 현재 streamlit 실행된 고유 아이디 없나? 그거 적용하기
         st.session_state.current_session_id = new_session_id
-        st.session_state.chat_sessions[new_session_id] = {
-            "title": "새로운 채팅",
-            "messages": [],
-            "thread_id": f"thread_{new_session_id}",
-        }
+        st.session_state.chat_sessions[new_session_id] = ChatSession(
+            title="새로운 채팅",
+            messages=[],
+            thread_id=f"thread_{new_session_id}",
+        )
         st.rerun()
 
     st.divider()
 
-    if (
-        st.session_state.chat_sessions
-    ):  # TODO: session_state에 대한 구조를 정의할수는 없는 것인가?
+    if st.session_state.chat_sessions:
         for session_id, session_data in st.session_state.chat_sessions.items():
             # 현재 활성 세션 표시
             if_current = session_id == st.session_state.current_session_id
             button_style = "➡ " if if_current else ""
 
             if st.button(
-                f"{button_style}{session_data['title']}",
+                f"{button_style}{session_data.title}",
                 key=f"chat_{session_id}",
                 use_container_width=True,
             ):
@@ -86,12 +82,12 @@ with chat_container:
         st.session_state.current_session_id
         and st.session_state.current_session_id in st.session_state.chat_sessions
     ):
-        current_messages = st.session_state.chat_sessions[
+        current_session: ChatSession = st.session_state.chat_sessions[
             st.session_state.current_session_id
-        ]["messages"]
-        for role, content in current_messages:
-            with st.chat_message(role):
-                st.write(content)
+        ]
+        for message in current_session.messages:
+            with st.chat_message(message.role):
+                st.write(message.content)
 
 st.markdown("<div class='input-container'>", unsafe_allow_html=True)
 
@@ -122,20 +118,20 @@ if user_input:
     if not st.session_state.current_session_id:
         new_session_id = f"session_{int(time.time())}"
         st.session_state.current_session_id = new_session_id
-        st.session_state.chat_sessions[new_session_id] = {
-            "title": get_chat_title(user_input),
-            "messages": [],
-            "thread_id": f"thread_{new_session_id}",
-        }
+        st.session_state.chat_sessions[new_session_id] = ChatSession(
+            title=get_chat_title(user_input),
+            messages=[],
+            thread_id=f"thread_{new_session_id}",
+        )
 
-    current_session = st.session_state.chat_sessions[
+    current_session: ChatSession = st.session_state.chat_sessions[
         st.session_state.current_session_id
     ]
 
-    if not current_session["messages"]:
-        current_session["title"] = get_chat_title(user_input)
+    if not current_session.messages:
+        current_session.title = get_chat_title(user_input)
 
-    current_session["messages"].append(("user", user_input))
+    current_session.add_message(role="user", content=user_input)
 
     initial_state = {
         "messages": [HumanMessage(content=user_input)],
@@ -147,7 +143,7 @@ if user_input:
         "processed_text": "",
         "selected_case_style": st.session_state.case_style,
     }
-    config = {"configurable": {"thread_id": current_session["thread_id"]}}
+    config = {"configurable": {"thread_id": current_session.thread_id}}
 
     try:
         result = st.session_state.app.invoke(initial_state, config)
@@ -161,9 +157,11 @@ if user_input:
             None,
         )
         if ai_msg:
-            current_session["messages"].append(("assistant", ai_msg.content))
+            current_session.add_message(role="assistant", content=ai_msg.content)
 
     except Exception as e:
-        current_session["messages"].append(("assistant", f"오류가 발생했습니다: {e}"))
+        current_session.add_message(
+            role="assistant", content=f"오류가 발생했습니다: {e}"
+        )
 
     st.rerun()
