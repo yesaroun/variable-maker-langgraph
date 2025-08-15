@@ -1,5 +1,7 @@
 # Variable Maker LangGraph
 
+![Variable Maker](variable_maker.png)
+
 **Variable Maker**는 LangGraph와 Google Gemini AI를 사용하여 프로그래밍 변수명을 자동 생성하는 **Streamlit 웹 애플리케이션**입니다.
 
 ## 주요 기능
