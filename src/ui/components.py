@@ -87,7 +87,7 @@ def render_input_container():
         user_input = st.chat_input("단어 또는 텍스트를 입력하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    
+
     return user_input
 
 
