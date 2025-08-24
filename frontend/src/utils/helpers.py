@@ -2,8 +2,7 @@ import time
 import uuid
 import streamlit as st
 
-from ..core.graph import create_graph
-from ..core.models import CaseStyle
+from models.chat_models import CaseStyle
 
 
 def get_chat_title(first_message: str, max_length: int = 30) -> str:
@@ -31,7 +30,7 @@ def generate_chat_session_id() -> str:
 def init_session_state():
     """Streamlit 세션 상태를 초기화합니다."""
     if "app" not in st.session_state:
-        st.session_state.app = create_graph()
+        st.session_state.app = True
         st.session_state.chat_sessions = {}  # {session_id: ChatSession}
         st.session_state.current_session_id = None
         st.session_state.case_style = CaseStyle.CAMEL_CASE

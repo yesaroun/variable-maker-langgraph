@@ -18,7 +18,8 @@ class CaseStyle(Enum):
 
 @tool
 def smart_case_convert(text: str, case_style: str) -> str:
-    """약어에 최적화된 스마트 케이스 변환 도구
+    """
+    약어에 최적화된 케이스 변환 도구
 
     Args:
         text: 변환할 텍스트 (camelCase 형태의 약어)
@@ -66,7 +67,7 @@ def smart_case_convert(text: str, case_style: str) -> str:
 
 
 @tool
-def classify_input_type(text: str) -> str:
+def classify_input_type(text: str) -> str:  # TODO: 추후에 입력 자체를 분리하기
     """입력 텍스트의 타입을 분류하는 도구
 
     Args:

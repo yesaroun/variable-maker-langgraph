@@ -1,8 +1,8 @@
-from typing import TypedDict, List, Annotated
+from enum import Enum
+from typing import TypedDict, List, Annotated, Optional
 from langchain_core.messages import BaseMessage
 from langgraph.graph import add_messages
-from enum import Enum
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
 class InputType(Enum):
@@ -18,37 +18,6 @@ class CaseStyle(Enum):
     CONSTANT_CASE = "CONSTANT_CASE"
 
 
-@dataclass
-class ChatMessage:
-    """채팅 메시지를 관리하는 데이터 클래스"""
-
-    role: str  # "user" 또는 "assistant"
-    content: str
-
-    def __post_init__(self):
-        if self.role not in ["user", "assistant"]:
-            raise ValueError(
-                f"role은 'user' 또는 'assistant'여야 합니다. 입력값: {self.role}"
-            )
-
-
-@dataclass
-class ChatSession:
-    """채팅 세션을 관리하는 데이터 클래스"""
-
-    title: str
-    messages: List[ChatMessage]
-    thread_id: str
-
-    def __post_init__(self):
-        if self.messages is None:
-            self.messages = []
-
-    def add_message(self, role: str, content: str) -> None:
-        """새로운 메시지 추가"""
-        self.messages.append(ChatMessage(role=role, content=content))
-
-
 class State(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
     input_type: InputType
@@ -58,6 +27,31 @@ class State(TypedDict):
     abbreviations: List[str]
     processed_text: str
     selected_case_style: CaseStyle
+
+
+class ProcessRequest(BaseModel):
+    """변수명 생성 요청 스키마"""
+    input_text: str
+    case_style: Optional[CaseStyle] = CaseStyle.CAMEL_CASE
+    thread_id: Optional[str] = None
+
+    class Config:
+        use_enum_values = True
+
+
+class ProcessResponse(BaseModel):
+    """변수명 생성 응답 스키마"""
+    success: bool
+    result: dict
+    message: str
+    thread_id: Optional[str] = None
+
+
+class CaseStyleOption(BaseModel):
+    """케이스 스타일 옵션"""
+    id: str
+    name: str
+    example: str
 
 
 def is_korean(text: str) -> bool:

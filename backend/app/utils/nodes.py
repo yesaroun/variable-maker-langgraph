@@ -1,12 +1,38 @@
+from typing import List
 from langchain_core.messages import HumanMessage, AIMessage
-from .models import State, is_korean, CaseStyle, InputType
+from ..schemas.variable import State, is_korean, CaseStyle, InputType
 from .tools import classify_input_type, smart_case_convert
-from .services import (
-    TranslationService,
+from ..services.translation_service import TranslationService
+from ..services.text_processing_service import (
     AbbreviationService,
     TextProcessingService,
-    MessageFormatter,
 )
+
+
+class MessageFormatter:
+    """메시지 포맷팅 유틸리티"""
+
+    @staticmethod
+    def format_word_result(
+        original_word: str,
+        translated_word: str,
+        abbreviations: List[str],
+        is_korean: bool,
+        case_style: CaseStyle,
+    ) -> str:
+        """단어 결과 메시지 포맷팅"""
+        abbrev_text = ", ".join(abbreviations) if abbreviations else "없음"
+        case_style_text = f" ({case_style.value})"
+
+        if is_korean:
+            return f"'{original_word}' → '{translated_word}' 약어{case_style_text}: {abbrev_text}"
+        else:
+            return f"'{original_word}' 약어{case_style_text}: {abbrev_text}"
+
+    @staticmethod
+    def format_text_result(original_text: str, processed_result: str) -> str:
+        """텍스트 결과 메시지 포맷팅"""
+        return f"텍스트 분석 결과:\n{processed_result}"
 
 
 def word_node(state: State) -> State:
