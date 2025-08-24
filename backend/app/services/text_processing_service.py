@@ -2,32 +2,15 @@ from typing import List
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
-from .models import CaseStyle
 
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 
-class TranslationService:
-    @staticmethod
-    def translate_to_english(korean_word: str) -> str:
-        """한국어 단어를 영어로 번역"""
-        try:
-            prompt = HumanMessage(
-                content=(
-                    f"Translate '{korean_word}' to English."
-                    "Return only the translated word in English, without any additional text, explanation, or punctuation. "
-                    "For example, for '고양이', return 'cat'."
-                )
-            )
-            response = llm.invoke([prompt])
-            return response.content.strip()
-        except Exception:
-            return "translation_error"
-
-
 class AbbreviationService:
+    """약어 생성 서비스"""
+
     @staticmethod
     def generate_abbreviations(word: str) -> List[str]:
         """영어 단어에 대한 약어 생성 (camelCase로 고정 반환)"""
@@ -64,6 +47,8 @@ class AbbreviationService:
 
 
 class TextProcessingService:
+    """텍스트 처리 서비스"""
+
     @staticmethod
     def process_text(text: str) -> str:
         """텍스트에서 변수명 후보 추출 및 처리 (camelCase로 고정 반환)"""
@@ -87,27 +72,3 @@ class TextProcessingService:
             return response.content.strip()
         except Exception:
             return "Error processing text."
-
-
-class MessageFormatter:
-    @staticmethod
-    def format_word_result(
-        original_word: str,
-        translated_word: str,
-        abbreviations: List[str],
-        is_korean: bool,
-        case_style: CaseStyle,
-    ) -> str:
-        """단어 결과 메시지 포맷팅"""
-        abbrev_text = ", ".join(abbreviations) if abbreviations else "없음"
-        case_style_text = f" ({case_style.value})"
-
-        if is_korean:
-            return f"'{original_word}' → '{translated_word}' 약어{case_style_text}: {abbrev_text}"
-        else:
-            return f"'{original_word}' 약어{case_style_text}: {abbrev_text}"
-
-    @staticmethod
-    def format_text_result(original_text: str, processed_result: str) -> str:
-        """텍스트 결과 메시지 포맷팅"""
-        return f"텍스트 분석 결과:\n{processed_result}"

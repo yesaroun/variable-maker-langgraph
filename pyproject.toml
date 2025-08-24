@@ -5,11 +5,13 @@ description = "AI-powered variable name generator using LangGraph and Streamlit"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.116.1",
     "langchain>=0.3.27",
     "langchain-google-genai>=2.1.8",
     "langgraph>=0.6.0",
     "python-dotenv>=1.1.1",
     "streamlit>=1.48.1",
+    "uvicorn>=0.35.0",
 ]
 
 [dependency-groups]
